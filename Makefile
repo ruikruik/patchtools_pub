@@ -6,12 +6,9 @@ SRCS_C =\
 	dump_patch.c \
 	file_io.c \
 	filefmt.c
-CFLAGS +=-g
+CFLAGS +=-g -DUSE_C_BLOCKFUNC
 
-patchtools: $(SRCS_C) opt_cipher.o
-
-opt_cipher.o: opt_cipher.s
-	nasm -felf64 opt_cipher.s
+patchtools: $(SRCS_C)
 
 clean:
-	rm *.o patchtools
+	rm -f patchtools
