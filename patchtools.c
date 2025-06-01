@@ -6,7 +6,9 @@
 #include <fcntl.h>
 #include <assert.h>
 #include <stdlib.h>
+#ifndef __DJGPP__
 #include <libgen.h>
+#endif
 #include "patchtools.h"
 
 char fmt_buf[4096];

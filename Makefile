@@ -11,4 +11,4 @@ CFLAGS +=-g -DUSE_C_BLOCKFUNC -O2
 patchtools: $(SRCS_C)
 
 clean:
-	rm -f patchtools
+	rm -f patchtools patchtools.exe
