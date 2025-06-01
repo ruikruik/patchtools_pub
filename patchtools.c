@@ -261,8 +261,15 @@ void create_patch( void ) {
 
 	/* Switching directories to allow the data path to be relative to the
 	   config file path */
-	getcwd( current_dir, sizeof current_dir );
-	chdir( config_dir );
+	if (getcwd( current_dir, sizeof current_dir ) == NULL) {
+		perror("getcwd failed");
+		exit( EXIT_FAILURE );
+	}
+
+	if (chdir( config_dir ) == -1) {
+		perror("chdir to config dir failed");
+		exit( EXIT_FAILURE );
+	}
 
 	/* Read the MSRAM input data */
 	read_msram_file(
@@ -270,7 +277,10 @@ void create_patch( void ) {
 		msram_path );
 
 	/* Restore the working directory */
-	chdir( current_dir );
+	if (chdir( current_dir ) == -1) {
+		perror("restoring cwd failed");
+		exit( EXIT_FAILURE );
+	}
 
 	free( config_dir );
 
