@@ -21,7 +21,6 @@
 
 #define CPU_KEY_KLAMATH_B 0x3adb7701
 #define CPU_KEY_DESCHUTES_A 0x3b021ce0
-/* Works for overdrive cpu01632_plat00_ver00000002_1998-06-10_PRD_6AAE5598.bin as well */
 #define CPU_KEY_DESCHUTES_B 0x17ae63a2
 #define CPU_KEY_MOBILE_A 0x33c949f6
 #define CPU_KEY_MOBILE_B 0x2eba562a
@@ -40,10 +39,11 @@
 #define CPU_KEY_DOTHAN_A0 0x63ff4b0d
 #define CPU_KEY_DOTHAN_B1 0x61e342a6
 #define CPU_KEY_DOTHAN_C0 0x51fc0681
+#define CPU_KEY_TOLAPAI 0x1a915957
 
 uint32_t cpukeys_get_base( uint32_t cpu_sig ) {
 
-	switch ( cpu_sig & 0xFFF ) {
+	switch ( cpu_sig & 0xFFF3FFF ) {
 		/* Probably different ucode patch format */
 //		case 0x611:
 //		case 0x612:
@@ -62,7 +62,7 @@ uint32_t cpukeys_get_base( uint32_t cpu_sig ) {
 			return CPU_KEY_DESCHUTES_A;
 		case 0x652: /* Deschutes */
 		case 0x653: /* Deschutes */
-                        /* plus cpu01632 */
+		case 0x1632: /* Deschutes */
 			return CPU_KEY_DESCHUTES_B;
 		case 0x660: /* Dixon */
 		case 0x66A: /* Dixon */
@@ -113,6 +113,8 @@ uint32_t cpukeys_get_base( uint32_t cpu_sig ) {
 			return CPU_KEY_DOTHAN_B1;
 		case 0x6d8:  /* Dothan Processor C0 */
 			return CPU_KEY_DOTHAN_C0;
+		case 0x10650:
+			return CPU_KEY_TOLAPAI;
 		default:
 			fprintf( stderr, "Unknown cpu key for CPUID: %03X\n",
 			         cpu_sig & 0xFFF );
