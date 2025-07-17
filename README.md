@@ -1,5 +1,10 @@
-Program for encrypting and decrypting Pentium II microcode patches.
-Written by Peter Bosch <public@pbx.sh>.
+Program for encrypting microcode patches. Intially written by Peter Bosch
+<public@pbx.sh> and and extended by Rudolf Marek <r.marek@assembler.cz>.
+
+# Supported Hardware
+
+This program can decrypt and encrypt microcode patches for most of the
+Pentium Pro, Pentium II, Pentium III and Pentium M processors.
 
 # Disclaimer
 Patchfiles produced by this program might crash or damage the system they are
@@ -11,8 +16,8 @@ to produce this program.
 
 # Key material
 The program needs a 32 bit base key to work, the file cpukeys.c lists the
-various unique keys used by certain CPU models. Some keys were recovered,
-some are still missing, likely due to unknown microcode update structure,
+various unique keys used by certain CPU models. Most of keys were recovered,
+but some are still missing, likely due to unknown microcode update structure,
 changes in FPROM (constants used as encryption keys).
 
 # MSRAM contents

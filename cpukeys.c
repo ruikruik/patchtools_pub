@@ -2,12 +2,18 @@
 #include <stdio.h>
 #include <stdlib.h>
 
+
 /*
  * Only works for:
  *
- * cpu00632_plat00_ver00000020_1996-09-03_PRD_EBC16165.bin
+ * cpu00630_plat00_ver00000013_1996-08-27_PRD_F316FC3B.bin
+ *
+ * Can be partially decrypted, fails integrity checks
+ * possibly looks like the structure is different from
+ * everything else.
+ *
  */
-#define CPU_KEY_KLAMATH_A 0x30910229
+#define CPU_KEY_KLAMATH_MYSTERY 0x159c0bac
 
 /*
  * Only works for:
@@ -19,6 +25,10 @@
  */
 #define CPU_KEY_PARTLY_WORKS 0x41af33f6
 
+#define CPU_KEY_PPRO_A0 0x715f1f2f
+#define CPU_KEY_PPRO_B0 0x28d4fc58
+#define CPU_KEY_PPRO_B1 0x61dab85e
+#define CPU_KEY_KLAMATH_A 0x30910229
 #define CPU_KEY_KLAMATH_B 0x3adb7701
 #define CPU_KEY_DESCHUTES_A 0x3b021ce0
 #define CPU_KEY_DESCHUTES_B 0x17ae63a2
@@ -45,15 +55,17 @@ uint32_t cpukeys_get_base( uint32_t cpu_sig ) {
 
 	switch ( cpu_sig & 0xFFF3FFF ) {
 		/* Probably different ucode patch format */
-//		case 0x611:
-//		case 0x612:
-//		case 0x616:
-//		case 0x617:
-//		case 0x619:
-		/* Obtaining keys for KLAMATH failed, likely microcode update has different format or FPROM is different */
-//		case 0x630: /* Klamath */
-//		case 0x632: /* Klamath */
-//                      return CPU_KEY_KLAMATH_A;
+		case 0x611:
+			return CPU_KEY_PPRO_B0;
+		case 0x612:
+		case 0x616:
+		case 0x617:
+			return CPU_KEY_PPRO_A0;
+		case 0x619:
+			return CPU_KEY_PPRO_B1;
+/*		case 0x630: see above */
+		case 0x632: /* Klamath */
+                      return CPU_KEY_KLAMATH_A;
 		case 0x633: /* Klamath */
 		case 0x634: /* Klamath */
 			return CPU_KEY_KLAMATH_B;
@@ -86,15 +98,15 @@ uint32_t cpukeys_get_base( uint32_t cpu_sig ) {
 			return CPU_KEY_COPPERMINE_B;
 		case 0x68a: /* coppermine D0 */
 			return CPU_KEY_COPPERMINE_C;
-//		case 0x690: /* unknown name */
-//		case 0x691: /* Timna */
-//		case 0x692: /* Timna */
-//			return CPU_KEY_PARTLY_WORKS;
+/*		case 0x690: Unknown */
+/*		case 0x691: Timna */
+/*		case 0x692: Timna */
+/*			return CPU_KEY_PARTLY_WORKS;*/
 		case 0x694:  /* Banias */
 		case 0x695:  /* Banias */
 			return CPU_KEY_BANIAS_A;
-//		case 0x696:
-//			return CPU_KEY_PARTLY_WORKS;
+/*		case 0x696: Unknown */
+			return CPU_KEY_PARTLY_WORKS;
 		case 0x6a0: /* Cascades PIII xeon A0 */
 		case 0x6a1: /* Cascades PIII xeon A1 */
 			return CPU_KEY_CASCADES_A;
