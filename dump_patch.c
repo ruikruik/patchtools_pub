@@ -14,13 +14,13 @@ void dump_patch_header( const patch_hdr_t *hdr ) {
 	printf("Total size:      %08X\n", hdr->total_size);
 }
 
-void dump_patch_body( const patch_body_t *body ) {
+void dump_patch_body( const patch_body_t *body, epatch_layout_t *l ) {
 	const uint32_t *groupbase;
 	uint32_t grp_or[MSRAM_GROUP_SIZE];
 	int i,j;
 	printf("MSRAM: \n");
 	memset( grp_or, 0, sizeof grp_or );
-	for ( i = 0; i < MSRAM_GROUP_COUNT; i++ ) {
+	for ( i = 0; i < (l->msram_dword_count / MSRAM_GROUP_SIZE); i++ ) {
 		groupbase = body->msram + MSRAM_GROUP_SIZE * i;
 		printf("\t%04X: %08X %08X %08X %08X %08X %08X %08X %08X\n",
 			i * 8,
@@ -35,7 +35,7 @@ void dump_patch_body( const patch_body_t *body ) {
 			groupbase[0], groupbase[1], groupbase[2], groupbase[3],
 			groupbase[4], groupbase[5], groupbase[6], groupbase[7]);
 	printf("Control register ops: \n");
-	for ( i = 0; i < PATCH_CR_OP_COUNT; i++ ) {
+	for ( i = 0; i < l->cr_ops_count; i++ ) {
 		printf("\tAddr: %08X  Mask: %08X  Value: %08X\n",
 			body->cr_ops[i].address,
 			body->cr_ops[i].mask,

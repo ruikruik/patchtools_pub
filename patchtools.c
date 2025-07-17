@@ -16,8 +16,8 @@ char *patch_filename;
 char *patch_name;
 epatch_file_t *patch_in;
 patch_body_t patch_body;
+uint8_t data_in[MAX_UF_SIZE];
 epatch_file_t epatch_out;
-uint8_t data_in[2048];
 
 /* Command line flags */
 int extract_patch_flag, dump_patch_flag, create_patch_flag, help_flag;
@@ -105,6 +105,7 @@ void parse_args( int argc, char *const *argv ) {
 
 void load_input_patch( void ) {
 	char *patch_fn;
+	epatch_layout_t *l;
 
 	/* Ensure we have a path */
 	if ( !patch_path )
@@ -127,33 +128,50 @@ void load_input_patch( void ) {
 	/* Decrypt the patch */
 	decrypt_patch_body(
 		&patch_body,
-		&patch_in->body,
+		&patch_in->body[0],
 		patch_in->header.proc_sig);
 	//TODO: Header only mode?
 
-	patch_seed = patch_in->body.key_seed;
-
+	l = get_epatch_layout(patch_in->header.proc_sig);
+	patch_seed = patch_in->body[l->key_seed_offs];
 }
 
 void write_output_patch( void ) {
+	epatch_layout_t *l;
+	uint32_t *p;
+	uint32_t chk = 0;
+	int i;
 
 	/* Ensure we have a path */
 	if ( !patch_path )
 		usage("missing patch path");
 
+	l = get_epatch_layout(patch_in->header.proc_sig);
+
+       /* Zero out the output buffer to prevent leaking memory contents */
+	memset(&epatch_out, 0, l->filesize );
+
 	/* Encrypt the patch */
 	encrypt_patch_body(
-		&epatch_out.body,
+		&epatch_out.body[0],
 		&patch_body,
 		patch_in->header.proc_sig,
 		patch_seed);
 
 	/* Assemble the header */
-	memcpy( &epatch_out.header, &patch_in->header, sizeof(patch_hdr_t) );
+	epatch_out.header = patch_in->header;
+	epatch_out.header.checksum = 0;
+
+	p = (uint32_t *) &epatch_out;
+	
+	for (i = 0;i< (l->filesize / sizeof(uint32_t));i++) {
+		chk+= p[i];
+	}
+	/* update checksum */
+	epatch_out.header.checksum = -chk;
 
 	/* Write the file */
-	write_file( patch_path, &epatch_out, sizeof(epatch_file_t) );
-
+	write_file( patch_path, &epatch_out, l->filesize );
 }
 
 void cleanup( void ) {
@@ -170,13 +188,19 @@ void cleanup( void ) {
 }
 
 void dump_patch( void ) {
+	epatch_layout_t *l;
+
 	dump_patch_header( &patch_in->header );
 	printf("Key seed: 0x%08X\n", patch_seed);
-	dump_patch_body( &patch_body );
+	l = get_epatch_layout(patch_in->header.proc_sig);
+
+	dump_patch_body( &patch_body, l);
 }
 
 void extract_patch( void ) {
 	size_t s;
+	epatch_layout_t *l;
+	uint32_t group_size;
 
 	if ( !config_path ) {
 		s = snprintf( fmt_buf, sizeof fmt_buf, "%s.txt", patch_name );
@@ -196,16 +220,24 @@ void extract_patch( void ) {
 		msram_path = strdup( fmt_buf );
 	}
 
+	l = get_epatch_layout(patch_in->header.proc_sig);
+
 	write_patch_config(
 		&patch_in->header,
 		&patch_body,
 		config_path,
 		msram_path,
-		patch_seed );
+		patch_seed,
+		l->cr_ops_count );
+
+	/* round to closest multiple of MSRAM_GROUP_SIZE */
+	group_size = l->msram_dword_count + MSRAM_GROUP_SIZE - 1;
+	group_size /= MSRAM_GROUP_SIZE;
 
 	write_msram_file(
 		&patch_body,
-		msram_path );
+		msram_path,
+		group_size);
 
 }
 

@@ -8,7 +8,8 @@ void write_patch_config(
 	const patch_body_t *body, 
 	const char *filename,
 	const char *msram_fn,
-	uint32_t key_seed ) {
+	uint32_t key_seed,
+	int cr_ops_count) {
 	FILE *file;
 	int i;
 
@@ -30,7 +31,7 @@ void write_patch_config(
 	fprintf( file, "key_seed   0x%08X\n", key_seed );
 	fprintf( file, "msram_file %s\n"    , msram_fn );
 
-	for ( i = 0; i < PATCH_CR_OP_COUNT; i++ ) {
+	for ( i = 0; i < cr_ops_count; i++ ) {
 		fprintf( file,
 		        "write_creg 0x%03X 0x%08X 0x%08X\n",
 		        body->cr_ops[i].address,
@@ -115,7 +116,7 @@ void read_patch_config(
 					addr );
 				exit( EXIT_FAILURE );
 			}
-			if ( i >= PATCH_CR_OP_COUNT ) {
+			if ( i >= PATCH_CR_OP_COUNT_MAX ) {
 				fprintf( stderr, 
 					"Too many write_creg statements\n");
 				exit( EXIT_FAILURE );
@@ -136,7 +137,7 @@ void read_patch_config(
 
 }
 
-void write_msram_file( const patch_body_t *body, const char *filename ) {
+void write_msram_file( const patch_body_t *body, const char *filename, int group_count) {
 	FILE *file;
 	const uint32_t *groupbase;
 	uint32_t grp_or[MSRAM_GROUP_SIZE];
@@ -151,7 +152,7 @@ void write_msram_file( const patch_body_t *body, const char *filename ) {
 	base = MSRAM_BASE_ADDRESS * 8;
 
 	memset( grp_or, 0, sizeof grp_or );
-	for ( i = 0; i < MSRAM_GROUP_COUNT; i++ ) {
+	for ( i = 0; i < group_count; i++ ) {
 		groupbase = body->msram + MSRAM_GROUP_SIZE * i;
 		fprintf(file,
 			"%04X: %08X %08X %08X %08X %08X %08X %08X %08X\n",
@@ -197,7 +198,7 @@ void read_msram_file( patch_body_t *body, const char *filename ) {
 			exit( EXIT_FAILURE );
 		}
 		raddr = ( addr / 8 ) - MSRAM_BASE_ADDRESS;
-		if ( raddr >= MSRAM_GROUP_COUNT ) {
+		if ( raddr >= MSRAM_GROUP_COUNT_MAX ) {
 			fprintf( stderr, 
 				"Address  not in MSRAM range :%08X\n", addr );
 			exit( EXIT_FAILURE );

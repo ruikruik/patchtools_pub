@@ -2,11 +2,13 @@
 #define __patchfile_h__
 #include <stdint.h>
 
-#define MSRAM_QWORD_COUNT (0x54)
-#define MSRAM_DWORD_COUNT (MSRAM_QWORD_COUNT * 2)
+#define MAX_UF_SIZE (8192)
+#define MAX_UF_BODY_SIZE (MAX_UF_SIZE - sizeof(patch_hdr_t))
+
+#define MSRAM_DWORD_COUNT_MAX (0x54 * 2)
 #define MSRAM_GROUP_SIZE  (0x8)
-#define MSRAM_GROUP_COUNT (MSRAM_DWORD_COUNT/8)
-#define PATCH_CR_OP_COUNT (0x10)
+#define MSRAM_GROUP_COUNT_MAX (MSRAM_DWORD_COUNT_MAX / MSRAM_GROUP_SIZE)
+#define PATCH_CR_OP_COUNT_MAX (0x10)
 #define MSRAM_BASE_ADDRESS (0xFEB)
 
 typedef struct __attribute__((packed)) {
@@ -29,23 +31,25 @@ typedef struct __attribute__((packed)) {
 	uint32_t      integrity;
 } patch_cr_op_t;
 
-typedef struct __attribute__((packed)) {
-	uint32_t      key_seed;
-	uint32_t      resvd_0;
-	uint32_t      msram[ MSRAM_DWORD_COUNT ];
-	uint32_t      msram_integrity;
-	uint32_t      resvd_1;
-	patch_cr_op_t cr_ops[ PATCH_CR_OP_COUNT ];
-} epatch_body_t;
 
 typedef struct {
-	uint32_t      msram[ MSRAM_DWORD_COUNT ];
-	patch_cr_op_t cr_ops[ PATCH_CR_OP_COUNT ];
+	int           key_seed_offs;
+	int           msram_offs;
+	int           msram_integrity_offs;
+	int           cr_ops_offs;
+	int           cr_ops_count;
+	int           msram_dword_count;
+	int           filesize;
+} epatch_layout_t;
+
+typedef struct {
+	uint32_t      msram[ MSRAM_DWORD_COUNT_MAX ];
+	patch_cr_op_t cr_ops[ PATCH_CR_OP_COUNT_MAX ];
 } patch_body_t;
 
-typedef struct __attribute__((packed)) {
+typedef struct {
 	patch_hdr_t   header;
-	epatch_body_t body;
+	uint32_t      body[MAX_UF_BODY_SIZE / sizeof(uint32_t)];
 } epatch_file_t;
 
 #endif

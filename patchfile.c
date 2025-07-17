@@ -2,6 +2,7 @@
 #include <stdint.h>
 #include <stdlib.h>
 #include <string.h>
+#include <assert.h>
 #include "rotate.h"
 #include "crypto.h"
 #include "patchtools.h"
@@ -12,6 +13,27 @@
 #define IV_KEY_INDEX_MASK       (0x9C)
 #define INTEGRITY_INDEX_MASK    (0xFF)
 #define CPUID_STEPPING_MASK     (0xF)
+
+epatch_layout_t *get_epatch_layout(uint32_t proc_sig)
+{
+	static epatch_layout_t l;
+	assert(proc_sig > 0x600);
+	l.filesize = 2048;
+	l.key_seed_offs = 0;
+	l.msram_offs = 2;
+	if (proc_sig < 0x630) {
+		l.msram_dword_count = 0x4a * 2;
+	} else {
+		l.msram_dword_count = 0x54 * 2;
+	}
+	l.msram_integrity_offs = l.msram_offs + l.msram_dword_count;
+	l.cr_ops_offs = l.msram_integrity_offs + 2;
+	l.cr_ops_count = PATCH_CR_OP_COUNT_MAX;
+	assert(l.filesize <= MAX_UF_SIZE);
+	assert(l.msram_dword_count <= MSRAM_DWORD_COUNT_MAX);
+	assert(l.cr_ops_count <= PATCH_CR_OP_COUNT_MAX);
+	return &l;
+}
 
 /**
  * Decrypts and validates an integrity check word based on the current
@@ -123,7 +145,12 @@ int derive_key(
 
 	/* The low 32 bits of the floating point constant ROM at the index
 	 * given by masking the IV is used as the key/polynomial for the LFSR */
-	key_idx = _iv & IV_KEY_INDEX_MASK;
+
+	if (proc_sig < 0x619) {
+		key_idx = _iv & 0xff;
+	} else {
+		key_idx = _iv & IV_KEY_INDEX_MASK;
+	}
 
 	/* Ensure that the FPROM table in the program contains this index */
 	if ( !fprom_exists( key_idx ) ) {
@@ -142,13 +169,15 @@ int derive_key(
  * @param iv       The initialization vector to use.
  * @param key      The key to use.
  */
-void _decrypt_patch(
+static void _decrypt_patch(
 	patch_body_t *out,
-	const epatch_body_t *in,
+	const uint32_t *in,
 	uint32_t iv,
-	uint32_t key ) {
+	uint32_t key,
+	uint32_t proc_sig) {
 
 	uint32_t integrity_idx;
+	epatch_layout_t *l = get_epatch_layout(proc_sig);
 	int i;
 
 	/* Zero out the output buffer to prevent leaking memory contents */
@@ -158,25 +187,25 @@ void _decrypt_patch(
 	crypto_init( key, iv );
 
 	/* Decrypt the patch MSRAM contents */
-	for ( i = 0; i < MSRAM_DWORD_COUNT; i++ ) {
-		out->msram[i] = crypto_decrypt( in->msram[i] );
+	for ( i = 0; i < l->msram_dword_count; i++ ) {
+		out->msram[i] = crypto_decrypt( in[i + l->msram_offs]);
 	}
 
 	/* Validate the patch MSRAM contents */
-	decrypt_verify_integrity( in->msram_integrity );
+	decrypt_verify_integrity( in[l->msram_integrity_offs]);
 
 	/* Decrypt the patch control register operations */
-	for ( i = 0; i < PATCH_CR_OP_COUNT; i++ ) {
+	for ( i = 0; i < l->cr_ops_count; i++ ) {
 		/* Decrypt operation fields */
 		out->cr_ops[i].address =
-			crypto_decrypt( in->cr_ops[i].address );
+			crypto_decrypt(in[l->cr_ops_offs + 4 * i]);
 		out->cr_ops[i].mask =
-			crypto_decrypt( in->cr_ops[i].mask );
+			crypto_decrypt(in[l->cr_ops_offs + 4 * i + 1]);
 		out->cr_ops[i].value =
-			crypto_decrypt( in->cr_ops[i].value );
+			crypto_decrypt(in[l->cr_ops_offs + 4 * i + 2]);
 
 		/* Validate operation */
-		decrypt_verify_integrity( in->cr_ops[i].integrity );
+		decrypt_verify_integrity( in[l->cr_ops_offs + 4 * i + 3]);
 	}
 
 }
@@ -195,18 +224,17 @@ void _decrypt_patch(
  * @error          ENCRYPT_MISSING_FPROM : A location in the FPROM was ref'd
  *                 that was not correctly set in the
  */
-int _encrypt_patch(
-	epatch_body_t *out,
+static int _encrypt_patch(
+	uint32_t *out,
 	const patch_body_t *in,
 	uint32_t proc_sig,
 	uint32_t seed ) {
 
 	uint32_t integrity_idx, iv, key_idx, key;
 	int i, status;
+	epatch_layout_t *l = get_epatch_layout(proc_sig);
 
-	/* Zero out the output buffer to prevent leaking memory contents */
-	memset( out, 0, sizeof(epatch_body_t) );
-	out->key_seed = seed;
+	out[l->key_seed_offs] = seed;
 
 	/* Derive the IV and key */
 	status = derive_key( &iv, &key, proc_sig, seed );
@@ -217,27 +245,27 @@ int _encrypt_patch(
 	crypto_init( key, iv );
 
 	/* Encrypt the MSRAM contents */
-	for ( i = 0; i < MSRAM_DWORD_COUNT; i++ ) {
-		out->msram[i] = crypto_encrypt( in->msram[i] );
+	for ( i = 0; i < l->msram_dword_count; i++ ) {
+		out[i + l->msram_offs] = crypto_encrypt( in->msram[i] );
 	}
 
 	/* Try to calculate ICV for the MSRAM */
-	out->msram_integrity = encrypt_generate_integrity( &status );
+	out[l->msram_integrity_offs] = encrypt_generate_integrity( &status );
 	if ( status != ENCRYPT_OK )
 		return status;
 
 	/* Encrypt the control register operations */
-	for ( i = 0; i < PATCH_CR_OP_COUNT; i++ ) {
+	for ( i = 0; i < l->cr_ops_count; i++ ) {
 		/* Encrypt operation fields */
-		out->cr_ops[i].address =
+		out[l->cr_ops_offs + 4 * i] =
 			crypto_encrypt( in->cr_ops[i].address );
-		out->cr_ops[i].mask =
+		out[l->cr_ops_offs + 4 * i + 1] =
 			crypto_encrypt( in->cr_ops[i].mask );
-		out->cr_ops[i].value =
+		out[l->cr_ops_offs + 4 * i + 2] =
 			crypto_encrypt( in->cr_ops[i].value );
 
 		/* Try to generate control register op ICV */
-		out->cr_ops[i].integrity =
+		out[l->cr_ops_offs + 4 * i + 3] =
 			encrypt_generate_integrity( &status );
 		if ( status != ENCRYPT_OK )
 			return status;
@@ -258,7 +286,7 @@ int _encrypt_patch(
  * @param seed     The initial key seed to be tried
  */
 void encrypt_patch_body(
-	epatch_body_t *out,
+	uint32_t *out,
 	const patch_body_t *in,
 	uint32_t proc_sig,
 	uint32_t seed )
@@ -276,13 +304,15 @@ void encrypt_patch_body(
  */
 void decrypt_patch_body(
 	patch_body_t *out,
-	const epatch_body_t *in,
+	const uint32_t *in,
 	uint32_t proc_sig ) {
 
 	uint32_t iv, key_idx, key;
+	epatch_layout_t *l = get_epatch_layout(proc_sig);
 
 	/* Derive the IV and key */
-	if ( derive_key( &iv, &key, proc_sig, in->key_seed ) != ENCRYPT_OK ) {
+	if ( derive_key( &iv, &key, proc_sig,
+			in[l->key_seed_offs] ) != ENCRYPT_OK ) {
 		fprintf( stderr,
 			"Patch file uses unknown FPROM[0x%02X] as key.",
 			key_idx );
@@ -290,6 +320,6 @@ void decrypt_patch_body(
 	}
 
 	/* Actually decrypt the patch */
-	_decrypt_patch( out, in, iv, key );
+	_decrypt_patch( out, in, iv, key, proc_sig);
 
 }
