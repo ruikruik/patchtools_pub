@@ -129,13 +129,14 @@ int derive_key(
 	uint32_t *iv,
 	uint32_t *key,
 	uint32_t proc_sig,
+	uint32_t plat_id,
 	uint32_t seed ) {
 
 	uint32_t _iv, key_idx;
 
 	/* The CPU base key is rotated by the stepping */
 	_iv  = rotl32(
-	             cpukeys_get_base( proc_sig ),
+	             cpukeys_get_base( proc_sig, plat_id ),
 	             proc_sig & CPUID_STEPPING_MASK );
 
 	/* and has 6 plus the key seed added to it to form the IV */
@@ -228,6 +229,7 @@ static int _encrypt_patch(
 	uint32_t *out,
 	const patch_body_t *in,
 	uint32_t proc_sig,
+	uint32_t plat_id,
 	uint32_t seed ) {
 
 	uint32_t integrity_idx, iv, key_idx, key;
@@ -237,7 +239,7 @@ static int _encrypt_patch(
 	out[l->key_seed_offs] = seed;
 
 	/* Derive the IV and key */
-	status = derive_key( &iv, &key, proc_sig, seed );
+	status = derive_key( &iv, &key, proc_sig, plat_id, seed);
 	if ( status != ENCRYPT_OK )
 		return status;
 
@@ -289,9 +291,10 @@ void encrypt_patch_body(
 	uint32_t *out,
 	const patch_body_t *in,
 	uint32_t proc_sig,
+	uint32_t plat_id,
 	uint32_t seed )
 {
-	while( _encrypt_patch( out, in, proc_sig, seed ) != ENCRYPT_OK ) {
+	while( _encrypt_patch( out, in, proc_sig, plat_id, seed ) != ENCRYPT_OK ) {
 		seed++;
 	}
 }
@@ -305,13 +308,14 @@ void encrypt_patch_body(
 void decrypt_patch_body(
 	patch_body_t *out,
 	const uint32_t *in,
-	uint32_t proc_sig ) {
+	uint32_t proc_sig,
+	uint32_t plat_id) {
 
 	uint32_t iv, key_idx, key;
 	epatch_layout_t *l = get_epatch_layout(proc_sig);
 
 	/* Derive the IV and key */
-	if ( derive_key( &iv, &key, proc_sig,
+	if ( derive_key( &iv, &key, proc_sig, plat_id,
 			in[l->key_seed_offs] ) != ENCRYPT_OK ) {
 		fprintf( stderr,
 			"Patch file uses unknown FPROM[0x%02X] as key.",

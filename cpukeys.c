@@ -15,16 +15,6 @@
  */
 #define CPU_KEY_KLAMATH_MYSTERY 0x159c0bac
 
-/*
- * Only works for:
- *
- * cpu00690_plat01_ver00000004_2000-02-06_PRD_BE8FFBD9.bin
- * cpu00691_plat01_ver00000002_2000-02-07_PRD_E6DA1028.bin
- * cpu00692_plat10_ver00000003_2000-03-22_PRD_B675019E.bin
- * cpu00696_plat10_ver00000001_2000-07-07_PRD_99C6BF9B.bin
- */
-#define CPU_KEY_PARTLY_WORKS 0x41af33f6
-
 #define CPU_KEY_PPRO_A0 0x715f1f2f
 #define CPU_KEY_PPRO_B0 0x28d4fc58
 #define CPU_KEY_PPRO_B1 0x61dab85e
@@ -41,6 +31,8 @@
 #define CPU_KEY_COPPERMINE_B 0x28121d58
 #define CPU_KEY_COPPERMINE_C 0x2cb473c4
 #define CPU_KEY_COPPERMINE_B0 0x2e664bbb
+#define CPU_KEY_TIMNA_20 0x4b1615c5
+#define CPU_KEY_TIMNA_10 0x41af33f6
 #define CPU_KEY_BANIAS_A 0x1c514c40
 #define CPU_KEY_CASCADES_A 0x6b8a374e
 #define CPU_KEY_CASCADES_B 0x44d5346c
@@ -51,7 +43,7 @@
 #define CPU_KEY_DOTHAN_C0 0x51fc0681
 #define CPU_KEY_TOLAPAI 0x1a915957
 
-uint32_t cpukeys_get_base( uint32_t cpu_sig ) {
+uint32_t cpukeys_get_base( uint32_t cpu_sig, uint32_t plat_id ) {
 
 	switch ( cpu_sig & 0xFFF3FFF ) {
 		/* Probably different ucode patch format */
@@ -98,15 +90,17 @@ uint32_t cpukeys_get_base( uint32_t cpu_sig ) {
 			return CPU_KEY_COPPERMINE_B;
 		case 0x68a: /* coppermine D0 */
 			return CPU_KEY_COPPERMINE_C;
-/*		case 0x690: Unknown */
-/*		case 0x691: Timna */
-/*		case 0x692: Timna */
-/*			return CPU_KEY_PARTLY_WORKS;*/
+		case 0x690: /* Unknown */
+		case 0x691: /* Timna */
+		case 0x692: /* Timna */
+		case 0x696: /* Unknown */
+                        if (plat_id == 0x20) {
+				return CPU_KEY_TIMNA_20;
+			}
+			return CPU_KEY_TIMNA_10;
 		case 0x694:  /* Banias */
 		case 0x695:  /* Banias */
 			return CPU_KEY_BANIAS_A;
-/*		case 0x696: Unknown */
-			return CPU_KEY_PARTLY_WORKS;
 		case 0x6a0: /* Cascades PIII xeon A0 */
 		case 0x6a1: /* Cascades PIII xeon A1 */
 			return CPU_KEY_CASCADES_A;

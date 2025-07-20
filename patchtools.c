@@ -129,7 +129,8 @@ void load_input_patch( void ) {
 	decrypt_patch_body(
 		&patch_body,
 		&patch_in->body[0],
-		patch_in->header.proc_sig);
+		patch_in->header.proc_sig,
+		patch_in->header.proc_flags);
 	//TODO: Header only mode?
 
 	l = get_epatch_layout(patch_in->header.proc_sig);
@@ -156,6 +157,7 @@ void write_output_patch( void ) {
 		&epatch_out.body[0],
 		&patch_body,
 		patch_in->header.proc_sig,
+		patch_in->header.proc_flags,
 		patch_seed);
 
 	/* Assemble the header */

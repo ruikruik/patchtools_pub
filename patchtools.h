@@ -6,7 +6,7 @@ int fprom_exists( uint32_t addr );
 
 uint32_t fprom_get( uint32_t addr );
 
-uint32_t cpukeys_get_base( uint32_t proc_sig );
+uint32_t cpukeys_get_base( uint32_t proc_sig, uint32_t plat_id );
 
 epatch_layout_t *get_epatch_layout(uint32_t proc_sig);
 
@@ -14,12 +14,14 @@ void encrypt_patch_body(
 	uint32_t *out,
 	const patch_body_t *in,
 	uint32_t proc_sig,
+	 uint32_t plat_id,
 	uint32_t seed );
 
 void decrypt_patch_body(
 	patch_body_t *out,
 	const uint32_t *in,
-	uint32_t proc_sig );
+	uint32_t proc_sig,
+	 uint32_t plat_id );
 
 void dump_patch_header( const patch_hdr_t *hdr );
 
