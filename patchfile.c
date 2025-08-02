@@ -177,7 +177,6 @@ static void _decrypt_patch(
 	uint32_t key,
 	uint32_t proc_sig) {
 
-	uint32_t integrity_idx;
 	epatch_layout_t *l = get_epatch_layout(proc_sig);
 	int i;
 
@@ -232,7 +231,7 @@ static int _encrypt_patch(
 	uint32_t plat_id,
 	uint32_t seed ) {
 
-	uint32_t integrity_idx, iv, key_idx, key;
+	uint32_t iv, key;
 	int i, status;
 	epatch_layout_t *l = get_epatch_layout(proc_sig);
 

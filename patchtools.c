@@ -116,12 +116,12 @@ void load_input_patch( void ) {
 	patch_in = (epatch_file_t *) data_in;
 
 	/* Get the patch filename */
-	strncpy( fmt_buf, patch_path, sizeof fmt_buf );
+	strncpy( fmt_buf, patch_path, sizeof(fmt_buf) - 1);
 	patch_fn = basename( fmt_buf );
 	patch_filename = strdup( patch_fn );
 
 	/* Get the patch name */
-	strncpy( fmt_buf, patch_filename, sizeof fmt_buf );
+	strncpy( fmt_buf, patch_filename, sizeof(fmt_buf) - 1);
 	patch_name = strtok( patch_filename, "." );
 	patch_name = strdup( patch_name );
 
@@ -141,7 +141,7 @@ void write_output_patch( void ) {
 	epatch_layout_t *l;
 	uint32_t *p;
 	uint32_t chk = 0;
-	int i;
+	uint32_t i;
 
 	/* Ensure we have a path */
 	if ( !patch_path )
@@ -200,7 +200,7 @@ void dump_patch( void ) {
 }
 
 void extract_patch( void ) {
-	size_t s;
+	int s;
 	epatch_layout_t *l;
 	uint32_t group_size;
 
@@ -250,7 +250,7 @@ char current_dir[4096];
  * Creates a new patch
  */
 void create_patch( void ) {
-	size_t s;
+	int s;
 	char *config_fn, *config_dir;
 
 	/* Ensure we have a path */
@@ -258,7 +258,7 @@ void create_patch( void ) {
 		usage("missing config path");
 
 	/* Get the config filename */
-	strncpy( fmt_buf, config_path, sizeof fmt_buf );
+	strncpy( fmt_buf, config_path, sizeof(fmt_buf) - 1);
 	config_fn = basename( fmt_buf );
 	config_fn = strdup(config_fn);
 
@@ -267,7 +267,7 @@ void create_patch( void ) {
 	patch_name = strdup( patch_name );
 
 	/* Get the config directory */
-	strncpy( fmt_buf, config_path, sizeof fmt_buf );
+	strncpy( fmt_buf, config_path, sizeof(fmt_buf) - 1);
 	config_dir = dirname( fmt_buf );
 	config_dir = strdup( config_dir );
 

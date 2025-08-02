@@ -1,6 +1,7 @@
 #include <stdint.h>
 #include <unistd.h>
 #include <fcntl.h>
+#include <assert.h>
 
 void read_file(const char *path, void *data, size_t size) {
 #ifdef __DJGPP__
@@ -9,7 +10,9 @@ void read_file(const char *path, void *data, size_t size) {
 	int fd = open( path, O_RDONLY );
 #endif
 
-	int nr = read( fd, data, size );
+	ssize_t nr = read( fd, data, size );
+	assert(nr > 0);
+	assert((size_t) nr < size);
 	close( fd );//TODO: error checking
 }
 
@@ -19,6 +22,8 @@ void write_file(const char *path, const void *data, size_t size) {
 #else
 	int fd = open( path, O_WRONLY | O_CREAT, 0664);
 #endif
-	int nr = write( fd, data, size );
+	ssize_t nr = write( fd, data, size );
+	assert(nr > 0);
+	assert((size_t) nr == size);
 	close( fd );//TODO: error checking
 }

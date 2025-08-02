@@ -6,7 +6,7 @@ SRCS_C =\
 	dump_patch.c \
 	file_io.c \
 	filefmt.c
-CFLAGS +=-g -DUSE_C_BLOCKFUNC -O2
+CFLAGS +=-g -DUSE_C_BLOCKFUNC -O2 -Wall -Wextra
 
 patchtools: $(SRCS_C)
 
