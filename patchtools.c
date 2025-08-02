@@ -70,7 +70,7 @@ void usage( const char *reason ) {
 }
 
 void parse_args( int argc, char *const *argv ) {
-	char opt;
+	int opt;
 	while ( (opt = getopt( argc, argv, ":p:i:dech" )) != -1 ) {
 		switch( opt ) {
 			case 'p':

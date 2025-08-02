@@ -1,3 +1,5 @@
+#TODO: Enable -Wconversion one day...
+
 SRCS_C =\
 	patchfile.c \
 	crypto.c \
