@@ -230,7 +230,7 @@ void extract_patch( void ) {
 		config_path,
 		msram_path,
 		patch_seed,
-		l->cr_ops_count );
+		l);
 
 	/* round to closest multiple of MSRAM_GROUP_SIZE */
 	group_size = l->msram_dword_count + MSRAM_GROUP_SIZE - 1;

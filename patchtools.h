@@ -37,7 +37,7 @@ void write_patch_config(
 	const char *filename,
 	const char *msram_fn,
 	uint32_t key_seed,
-	int cr_ops_count );
+	epatch_layout_t *l);
 
 void write_msram_file(
 	const patch_body_t *body,

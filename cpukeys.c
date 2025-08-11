@@ -42,6 +42,21 @@
 #define CPU_KEY_DOTHAN_B1 0x61e342a6
 #define CPU_KEY_DOTHAN_C0 0x51fc0681
 #define CPU_KEY_TOLAPAI 0x1a915957
+#define CPU_KEY_YONAH_A0 0x4fec1b47
+#define CPU_KEY_YONAH_B0 0x048029bd
+#define CPU_KEY_YONAH_C0 0x5b3f2dd8
+#define CPU_KEY_YONAH_E0 0x4ec123aa
+#define CPU_KEY_MEROM_A0 0x1abecade
+#define CPU_KEY_MEROM_L2 0x287469cd
+/* Similar to Conroe ?! */
+#define CPU_KEY_MEROM_Bx 0x4f72bfa3
+#define CPU_KEY_MEROM_Mx 0x956b4321
+/* Why it is nearly same? */
+#define CPU_KEY_CONROE_A0 0x4f72c0a3
+#define CPU_KEY_CONROE_A1 0x4f72c023
+/* Why it is nearly same? */
+#define CPU_KEY_PENRYN_A0 0x78680efb
+#define CPU_KEY_PENRYN_A1 0x78680e7b
 
 uint32_t cpukeys_get_base( uint32_t cpu_sig, uint32_t plat_id ) {
 
@@ -119,11 +134,44 @@ uint32_t cpukeys_get_base( uint32_t cpu_sig, uint32_t plat_id ) {
 			return CPU_KEY_DOTHAN_B1;
 		case 0x6d8:  /* Dothan Processor C0 */
 			return CPU_KEY_DOTHAN_C0;
+		case 0x6e0:
+		case 0x6e1:  /* Yonah A0 ? */
+			return CPU_KEY_YONAH_A0;
+		case 0x6e4:  /* Yonah B0 */
+			return CPU_KEY_YONAH_B0;
+		case 0x6e8:  /* Yonah C0 */
+			return CPU_KEY_YONAH_C0;
+		case 0x6ec:  /* Yonah E0 */
+			return CPU_KEY_YONAH_E0;
+		/*   0x6ed: Yonah M0 has ext header */
+		case 0x6f0:
+		case 0x6f1:  /* Merom A0 ? */
+			return CPU_KEY_MEROM_A0;
+		case 0x6f2: /* Merom L2 */
+			return CPU_KEY_MEROM_L2;
+		case 0x6f4: /* Merom B0 */
+		case 0x6f5: /* Merom B1 */
+		case 0x6f6: /* Merom B2 */
+		case 0x6f7: /* Merom B3 */
+			return CPU_KEY_MEROM_Bx;
+		/*   0x6f9: Merom Tigerton E0 has ext header */
+		case 0x6fa: /* Merom E1 */
+		/*   0x6fb: Merom Tigerton has ext header */
+		case 0x6fd: /* Merom M0 / M1 */
+			return CPU_KEY_MEROM_Mx;
 		case 0x10650:
 			return CPU_KEY_TOLAPAI;
+		case 0x10660: /* Conroe A0 ? */
+			return CPU_KEY_CONROE_A0;
+		case 0x10661: /* Conroe A1 */
+			return CPU_KEY_CONROE_A1;
+		case 0x106D0: /* Penryn A0 ? */
+			return CPU_KEY_PENRYN_A0;
+		case 0x106D1:  /* Penryn A1 */
+			return CPU_KEY_PENRYN_A1;
 		default:
 			fprintf( stderr, "Unknown cpu key for CPUID: %03X\n",
-			         cpu_sig & 0xFFF );
+			         cpu_sig );
 			exit( EXIT_FAILURE );
 	}
 }

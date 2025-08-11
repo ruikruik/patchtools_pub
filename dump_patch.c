@@ -18,6 +18,10 @@ void dump_patch_body( const patch_body_t *body, epatch_layout_t *l ) {
 	const uint32_t *groupbase;
 	uint32_t grp_or[MSRAM_GROUP_SIZE];
 	int i,j;
+	if (l->key_seed_offs == 1) {
+		printf("Unknown:  %08X\n", body->unknown);
+		printf("Version:  %08X\n", body->update_rev2);
+	}
 	printf("MSRAM: \n");
 	memset( grp_or, 0, sizeof grp_or );
 	for ( i = 0; i < (l->msram_dword_count / MSRAM_GROUP_SIZE); i++ ) {

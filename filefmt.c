@@ -9,7 +9,7 @@ void write_patch_config(
 	const char *filename,
 	const char *msram_fn,
 	uint32_t key_seed,
-	int cr_ops_count) {
+	epatch_layout_t *l) {
 	FILE *file;
 	int i;
 
@@ -19,19 +19,23 @@ void write_patch_config(
 		exit( EXIT_FAILURE );
 	}
 
-	fprintf( file, "header_ver 0x%08X\n", hdr->header_ver );
-	fprintf( file, "update_rev 0x%08X\n", hdr->update_rev );
-	fprintf( file, "date_bcd   0x%08X\n", hdr->date_bcd );
-	fprintf( file, "proc_sig   0x%08X\n", hdr->proc_sig );
-	fprintf( file, "checksum   0x%08X\n", hdr->checksum );
-	fprintf( file, "loader_rev 0x%08X\n", hdr->loader_ver );
-	fprintf( file, "proc_flags 0x%08X\n", hdr->proc_flags );
-	fprintf( file, "data_size  0x%08X\n", hdr->data_size );
-	fprintf( file, "total_size 0x%08X\n", hdr->total_size );
-	fprintf( file, "key_seed   0x%08X\n", key_seed );
+	fprintf( file, "header_ver  0x%08X\n", hdr->header_ver );
+	fprintf( file, "update_rev  0x%08X\n", hdr->update_rev );
+	fprintf( file, "date_bcd    0x%08X\n", hdr->date_bcd );
+	fprintf( file, "proc_sig    0x%08X\n", hdr->proc_sig );
+	fprintf( file, "checksum    0x%08X\n", hdr->checksum );
+	fprintf( file, "loader_rev  0x%08X\n", hdr->loader_ver );
+	fprintf( file, "proc_flags  0x%08X\n", hdr->proc_flags );
+	fprintf( file, "data_size   0x%08X\n", hdr->data_size );
+	fprintf( file, "total_size  0x%08X\n", hdr->total_size );
+	fprintf( file, "key_seed    0x%08X\n", key_seed );
+	if (l->key_seed_offs == 1) {
+	fprintf( file, "unknown     0x%08X\n", body->unknown );
+	fprintf( file, "update_rev2 0x%08X\n", body->update_rev2 );
+	}
 	fprintf( file, "msram_file %s\n"    , msram_fn );
 
-	for ( i = 0; i < cr_ops_count; i++ ) {
+	for ( i = 0; i < l->cr_ops_count; i++ ) {
 		fprintf( file,
 		        "write_creg 0x%03X 0x%08X 0x%08X\n",
 		        body->cr_ops[i].address,
@@ -98,6 +102,10 @@ void read_patch_config(
 			hdr->total_size = strtol( par_v, NULL, 0 );
 		} else if ( strcmp( par_n, "key_seed" ) == 0 ) {
 			*key_seed = strtol( par_v, NULL, 0 );
+		} else if ( strcmp( par_n, "unknown" ) == 0 ) {
+			body->unknown = strtol( par_v, NULL, 0 );
+		} else if ( strcmp( par_n, "update_rev2" ) == 0 ) {
+			body->update_rev2 = strtol( par_v, NULL, 0 );
 		} else if ( strcmp( par_n, "msram_file" ) == 0 ) {
 			msram_fn = strdup( par_v );
 		} else if ( strcmp( par_n, "write_creg" ) == 0 ) {
@@ -110,7 +118,7 @@ void read_patch_config(
 			addr = strtol( par_v,  NULL, 0 );
 			mask = strtol( par_v2, NULL, 0 );
 			data = strtol( par_v3, NULL, 0 );
-			if ( addr & ~0x1FF ) {
+			if ( addr & ~0x3FF ) {
 				fprintf( stderr, 
 					"Invalid creg address: 0x%03X\n", 
 					addr );

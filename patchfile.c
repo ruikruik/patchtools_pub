@@ -21,14 +21,38 @@ epatch_layout_t *get_epatch_layout(uint32_t proc_sig)
 	l.filesize = 2048;
 	l.key_seed_offs = 0;
 	l.msram_offs = 2;
+
 	if (proc_sig < 0x630) {
 		l.msram_dword_count = 0x4a * 2;
+		l.cr_ops_count = 0x10;
+	} else if ((proc_sig == 0x6e0) || (proc_sig == 0x6e1)) {
+		l.key_seed_offs = 1;
+		l.filesize = 5120;
+		l.msram_offs = 4;
+		l.msram_dword_count = 0x180 * 2;
+		l.cr_ops_count = 0x3a;
+	} else if (proc_sig == 0x6ec) {
+		l.key_seed_offs = 1;
+		l.filesize = 4096;
+		l.msram_offs = 4;
+		l.msram_dword_count = 0x80 * 2;
+		l.cr_ops_count = 0x40;
+	} else if (((proc_sig & ~0xfu) == 0x6f0) ||
+		   ((proc_sig & ~0xfu) == 0x10660) ||
+		   ((proc_sig & ~0xfu) == 0x106D0) ||
+		   ((proc_sig & ~0xfu) == 0x6e0)) {
+		l.key_seed_offs = 1;
+		l.filesize = 4096;
+		l.msram_offs = 4;
+		l.msram_dword_count = 0x100 * 2;
+		l.cr_ops_count = 0x40;
 	} else {
 		l.msram_dword_count = 0x54 * 2;
+		l.cr_ops_count = 0x10;
 	}
 	l.msram_integrity_offs = l.msram_offs + l.msram_dword_count;
 	l.cr_ops_offs = l.msram_integrity_offs + 2;
-	l.cr_ops_count = PATCH_CR_OP_COUNT_MAX;
+
 	assert(l.filesize <= MAX_UF_SIZE);
 	assert(l.msram_dword_count <= MSRAM_DWORD_COUNT_MAX);
 	assert(l.cr_ops_count <= PATCH_CR_OP_COUNT_MAX);
@@ -186,6 +210,11 @@ static void _decrypt_patch(
 	/* Load the IV and key into the cipher implementation */
 	crypto_init( key, iv );
 
+	if (l->key_seed_offs == 1) {
+		out->unknown = crypto_decrypt(in[2]);
+		out->update_rev2 = crypto_decrypt(in[3]);
+	}
+
 	/* Decrypt the patch MSRAM contents */
 	for ( i = 0; i < l->msram_dword_count; i++ ) {
 		out->msram[i] = crypto_decrypt( in[i + l->msram_offs]);
@@ -244,6 +273,11 @@ static int _encrypt_patch(
 
 	/* Load the IV and key into the cipher implementation */
 	crypto_init( key, iv );
+
+	if (l->key_seed_offs == 1) {
+		out[2] = crypto_encrypt(in->unknown);
+		out[3] = crypto_encrypt(in->update_rev2);
+	}
 
 	/* Encrypt the MSRAM contents */
 	for ( i = 0; i < l->msram_dword_count; i++ ) {

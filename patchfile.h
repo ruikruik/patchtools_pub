@@ -5,10 +5,10 @@
 #define MAX_UF_SIZE (8192)
 #define MAX_UF_BODY_SIZE (MAX_UF_SIZE - sizeof(patch_hdr_t))
 
-#define MSRAM_DWORD_COUNT_MAX (0x54 * 2)
+#define MSRAM_DWORD_COUNT_MAX (0x180 * 2)
 #define MSRAM_GROUP_SIZE  (0x8)
 #define MSRAM_GROUP_COUNT_MAX (MSRAM_DWORD_COUNT_MAX / MSRAM_GROUP_SIZE)
-#define PATCH_CR_OP_COUNT_MAX (0x10)
+#define PATCH_CR_OP_COUNT_MAX (0x40)
 #define MSRAM_BASE_ADDRESS (0xFEB)
 
 typedef struct __attribute__((packed)) {
@@ -45,6 +45,8 @@ typedef struct {
 typedef struct {
 	uint32_t      msram[ MSRAM_DWORD_COUNT_MAX ];
 	patch_cr_op_t cr_ops[ PATCH_CR_OP_COUNT_MAX ];
+	uint32_t      unknown;
+	uint32_t      update_rev2;
 } patch_body_t;
 
 typedef struct {
