@@ -42,7 +42,7 @@ void write_patch_config(
 void write_msram_file(
 	const patch_body_t *body,
 	const char *filename,
-	int group_count );
+	epatch_layout_t *l );
 
 void read_patch_config(
 	patch_hdr_t *hdr,
@@ -51,6 +51,9 @@ void read_patch_config(
 	char **msram_fnp,
 	uint32_t *key_seed );
 
-void read_msram_file( patch_body_t *body, const char *filename );
+void read_msram_file(
+	patch_body_t *body,
+	const char *filename,
+	epatch_layout_t *l );
 
 #endif

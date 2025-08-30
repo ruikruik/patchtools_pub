@@ -145,11 +145,19 @@ void read_patch_config(
 
 }
 
-void write_msram_file( const patch_body_t *body, const char *filename, int group_count) {
+void write_msram_file(
+	const patch_body_t *body,
+	const char *filename,
+	epatch_layout_t *l )
+{
 	FILE *file;
 	const uint32_t *groupbase;
 	uint32_t grp_or[MSRAM_GROUP_SIZE];
-	int i,j, base;
+	int i,j, base, group_count;
+
+	/* round to closest multiple of MSRAM_GROUP_SIZE */
+	group_count = l->msram_dword_count + MSRAM_GROUP_SIZE - 1;
+	group_count /= MSRAM_GROUP_SIZE;
 
 	file = fopen(filename, "w");
 	if ( !file ) {
@@ -157,7 +165,7 @@ void write_msram_file( const patch_body_t *body, const char *filename, int group
 		exit( EXIT_FAILURE );
 	}
 
-	base = MSRAM_BASE_ADDRESS * 8;
+	base = l->msram_base;
 
 	memset( grp_or, 0, sizeof grp_or );
 	for ( i = 0; i < group_count; i++ ) {
@@ -175,7 +183,11 @@ void write_msram_file( const patch_body_t *body, const char *filename, int group
 
 }
 
-void read_msram_file( patch_body_t *body, const char *filename ) {
+void read_msram_file(
+	patch_body_t *body,
+	const char *filename,
+	epatch_layout_t *l  )
+{
 	char *ts;
 	FILE *file;
 	int addr, raddr;
@@ -199,19 +211,19 @@ void read_msram_file( patch_body_t *body, const char *filename ) {
 				 addr );
 			exit( EXIT_FAILURE );
 		}
-		if ( addr < MSRAM_BASE_ADDRESS * 8 ) {
+		if ( addr < l->msram_base ) {
 			fprintf( stderr, 
 				"Address not in MSRAM range :%08X\n",
 				 addr );
 			exit( EXIT_FAILURE );
 		}
-		raddr = ( addr / 8 ) - MSRAM_BASE_ADDRESS;
-		if ( raddr >= MSRAM_GROUP_COUNT_MAX ) {
+		raddr = addr - l->msram_base;
+		if ( raddr >= l->msram_dword_count ) {
 			fprintf( stderr, 
 				"Address  not in MSRAM range :%08X\n", addr );
 			exit( EXIT_FAILURE );
 		}
-		groupbase = body->msram + MSRAM_GROUP_SIZE * raddr;
+		groupbase = body->msram + raddr;
 		for ( g = 0; g < MSRAM_GROUP_SIZE; g++ ) {
 			ts = strtok(NULL, " ");
 			if ( !ts ) {

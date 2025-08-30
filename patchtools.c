@@ -202,7 +202,6 @@ void dump_patch( void ) {
 void extract_patch( void ) {
 	int s;
 	epatch_layout_t *l;
-	uint32_t group_size;
 
 	if ( !config_path ) {
 		s = snprintf( fmt_buf, sizeof fmt_buf, "%s.txt", patch_name );
@@ -232,14 +231,10 @@ void extract_patch( void ) {
 		patch_seed,
 		l);
 
-	/* round to closest multiple of MSRAM_GROUP_SIZE */
-	group_size = l->msram_dword_count + MSRAM_GROUP_SIZE - 1;
-	group_size /= MSRAM_GROUP_SIZE;
-
 	write_msram_file(
 		&patch_body,
 		msram_path,
-		group_size);
+		l);
 
 }
 
@@ -252,6 +247,7 @@ char current_dir[4096];
 void create_patch( void ) {
 	int s;
 	char *config_fn, *config_dir;
+	epatch_layout_t *l;
 
 	/* Ensure we have a path */
 	if ( !config_path )
@@ -307,10 +303,13 @@ void create_patch( void ) {
 		exit( EXIT_FAILURE );
 	}
 
+	l = get_epatch_layout(patch_in->header.proc_sig);
+
 	/* Read the MSRAM input data */
 	read_msram_file(
 		&patch_body,
-		msram_path );
+		msram_path,
+		l );
 
 	/* Restore the working directory */
 	if (chdir( current_dir ) == -1) {

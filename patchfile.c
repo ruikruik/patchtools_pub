@@ -18,6 +18,7 @@ epatch_layout_t *get_epatch_layout(uint32_t proc_sig)
 {
 	static epatch_layout_t l;
 	assert(proc_sig > 0x600);
+	uint32_t msram_end = 0x8000;
 	l.filesize = 2048;
 	l.key_seed_offs = 0;
 	l.msram_offs = 2;
@@ -46,10 +47,15 @@ epatch_layout_t *get_epatch_layout(uint32_t proc_sig)
 		l.msram_offs = 4;
 		l.msram_dword_count = 0x100 * 2;
 		l.cr_ops_count = 0x40;
+		if ((proc_sig & ~0xfu) != 0x6e0) {
+			msram_end = 0x10000;
+		}
 	} else {
 		l.msram_dword_count = 0x54 * 2;
 		l.cr_ops_count = 0x10;
 	}
+
+	l.msram_base = msram_end - l.msram_dword_count;
 	l.msram_integrity_offs = l.msram_offs + l.msram_dword_count;
 	l.cr_ops_offs = l.msram_integrity_offs + 2;
 

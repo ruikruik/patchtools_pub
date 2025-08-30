@@ -7,9 +7,7 @@
 
 #define MSRAM_DWORD_COUNT_MAX (0x180 * 2)
 #define MSRAM_GROUP_SIZE  (0x8)
-#define MSRAM_GROUP_COUNT_MAX (MSRAM_DWORD_COUNT_MAX / MSRAM_GROUP_SIZE)
 #define PATCH_CR_OP_COUNT_MAX (0x40)
-#define MSRAM_BASE_ADDRESS (0xFEB)
 
 typedef struct __attribute__((packed)) {
 	uint32_t      header_ver;
@@ -40,6 +38,7 @@ typedef struct {
 	int           cr_ops_count;
 	int           msram_dword_count;
 	int           filesize;
+	int           msram_base;
 } epatch_layout_t;
 
 typedef struct {
