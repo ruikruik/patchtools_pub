@@ -151,13 +151,7 @@ void write_msram_file(
 	epatch_layout_t *l )
 {
 	FILE *file;
-	const uint32_t *groupbase;
-	uint32_t grp_or[MSRAM_GROUP_SIZE];
-	int i,j, base, group_count;
-
-	/* round to closest multiple of MSRAM_GROUP_SIZE */
-	group_count = l->msram_dword_count + MSRAM_GROUP_SIZE - 1;
-	group_count /= MSRAM_GROUP_SIZE;
+	int i;
 
 	file = fopen(filename, "w");
 	if ( !file ) {
@@ -165,18 +159,15 @@ void write_msram_file(
 		exit( EXIT_FAILURE );
 	}
 
-	base = l->msram_base;
-
-	memset( grp_or, 0, sizeof grp_or );
-	for ( i = 0; i < group_count; i++ ) {
-		groupbase = body->msram + MSRAM_GROUP_SIZE * i;
-		fprintf(file,
-			"%04X: %08X %08X %08X %08X %08X %08X %08X %08X\n",
-			base + i * 8,
-			groupbase[0], groupbase[1], groupbase[2], groupbase[3],
-			groupbase[4], groupbase[5], groupbase[6], groupbase[7]);
-		for ( j = 0; j < MSRAM_GROUP_SIZE; j++ )
-			grp_or[j] |= groupbase[j];
+	for ( i = 0; i < l->msram_dword_count; i++ ) {
+		if ((i % l->msram_group_size) == 0) {
+			fprintf(file, "%04X", l->msram_base + i);
+		}
+		fprintf(file," %08X", body->msram[i]);
+		if (((i % l->msram_group_size) == (l->msram_group_size - 1)) ||
+		    (i == (l->msram_dword_count - 1)))  {
+			fprintf(file,"\n");
+		}
 	}
 
 	fclose( file );
@@ -190,7 +181,7 @@ void read_msram_file(
 {
 	char *ts;
 	FILE *file;
-	int addr, raddr;
+	int addr, raddr, group_size;
 	int g;
 	uint32_t *groupbase;
 
@@ -206,7 +197,7 @@ void read_msram_file(
 		if ( !ts )
 			continue;
 		addr = strtol( ts, NULL, 16 );
-		if ( addr % 8 ) {
+		if ( addr % l->msram_group_size ) {
 			fprintf( stderr, "Misaligned address in input :%08X\n",
 				 addr );
 			exit( EXIT_FAILURE );
@@ -224,7 +215,14 @@ void read_msram_file(
 			exit( EXIT_FAILURE );
 		}
 		groupbase = body->msram + raddr;
-		for ( g = 0; g < MSRAM_GROUP_SIZE; g++ ) {
+
+		group_size = l->msram_group_size;
+
+		if ((raddr + group_size) > l->msram_dword_count) {
+			group_size = l->msram_dword_count - raddr;
+		}
+
+		for ( g = 0; g < group_size; g++ ) {
 			ts = strtok(NULL, " ");
 			if ( !ts ) {
 				fprintf( stderr, 

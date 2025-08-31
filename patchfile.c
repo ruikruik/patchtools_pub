@@ -22,8 +22,10 @@ epatch_layout_t *get_epatch_layout(uint32_t proc_sig)
 	l.filesize = 2048;
 	l.key_seed_offs = 0;
 	l.msram_offs = 2;
+	l.msram_group_size = 8;
 
 	if (proc_sig < 0x630) {
+		l.msram_group_size = 7;
 		l.msram_dword_count = 0x4a * 2;
 		l.cr_ops_count = 0x10;
 	} else if ((proc_sig == 0x6e0) || (proc_sig == 0x6e1)) {
@@ -62,6 +64,7 @@ epatch_layout_t *get_epatch_layout(uint32_t proc_sig)
 	assert(l.filesize <= MAX_UF_SIZE);
 	assert(l.msram_dword_count <= MSRAM_DWORD_COUNT_MAX);
 	assert(l.cr_ops_count <= PATCH_CR_OP_COUNT_MAX);
+	assert(l.msram_group_size <= MSRAM_GROUP_SIZE_MAX);
 	return &l;
 }
 

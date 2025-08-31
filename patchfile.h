@@ -6,7 +6,7 @@
 #define MAX_UF_BODY_SIZE (MAX_UF_SIZE - sizeof(patch_hdr_t))
 
 #define MSRAM_DWORD_COUNT_MAX (0x180 * 2)
-#define MSRAM_GROUP_SIZE  (0x8)
+#define MSRAM_GROUP_SIZE_MAX 8
 #define PATCH_CR_OP_COUNT_MAX (0x40)
 
 typedef struct __attribute__((packed)) {
@@ -39,6 +39,7 @@ typedef struct {
 	int           msram_dword_count;
 	int           filesize;
 	int           msram_base;
+	int           msram_group_size;
 } epatch_layout_t;
 
 typedef struct {
