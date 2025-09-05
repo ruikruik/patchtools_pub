@@ -151,7 +151,7 @@ void write_msram_file(
 	epatch_layout_t *l )
 {
 	FILE *file;
-	int i;
+	int i, addr;
 
 	file = fopen(filename, "w");
 	if ( !file ) {
@@ -159,9 +159,11 @@ void write_msram_file(
 		exit( EXIT_FAILURE );
 	}
 
+	addr = l->msram_base;
 	for ( i = 0; i < l->msram_dword_count; i++ ) {
 		if ((i % l->msram_group_size) == 0) {
-			fprintf(file, "%04X", l->msram_base + i);
+			fprintf(file, "%04X: ", addr);
+			addr += 8;
 		}
 		fprintf(file," %08X", body->msram[i]);
 		if (((i % l->msram_group_size) == (l->msram_group_size - 1)) ||

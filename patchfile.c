@@ -57,7 +57,12 @@ epatch_layout_t *get_epatch_layout(uint32_t proc_sig)
 		l.cr_ops_count = 0x10;
 	}
 
-	l.msram_base = msram_end - l.msram_dword_count;
+
+	if (l.msram_group_size != 7) {
+		l.msram_base = msram_end - l.msram_dword_count;
+	} else {
+		l.msram_base = 0x3fac * 2;
+	}
 	l.msram_integrity_offs = l.msram_offs + l.msram_dword_count;
 	l.cr_ops_offs = l.msram_integrity_offs + 2;
 
