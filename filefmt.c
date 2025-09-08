@@ -1,4 +1,5 @@
 #include <stdio.h>
+#include <assert.h>
 #include <string.h>
 #include <stdlib.h>
 #include "patchfile.h"
@@ -185,7 +186,6 @@ void read_msram_file(
 	FILE *file;
 	int addr, raddr, group_size;
 	int g;
-	uint32_t *groupbase;
 
 
 	file = fopen(filename, "r");
@@ -199,7 +199,7 @@ void read_msram_file(
 		if ( !ts )
 			continue;
 		addr = strtol( ts, NULL, 16 );
-		if ( addr % l->msram_group_size ) {
+		if ( addr % 8 ) {
 			fprintf( stderr, "Misaligned address in input :%08X\n",
 				 addr );
 			exit( EXIT_FAILURE );
@@ -210,13 +210,18 @@ void read_msram_file(
 				 addr );
 			exit( EXIT_FAILURE );
 		}
-		raddr = addr - l->msram_base;
-		if ( raddr >= l->msram_dword_count ) {
+		/*
+		 * Microcode addresses in PPro match as if there were 8 DWords per triplet
+		 * Adjust the index on PPro
+		 */
+		raddr = (addr - l->msram_base) / 8;
+		raddr *= l->msram_group_size;
+
+		if (raddr >= l->msram_dword_count) {
 			fprintf( stderr, 
-				"Address  not in MSRAM range :%08X\n", addr );
+				"Address not in MSRAM range :%08X\n", addr );
 			exit( EXIT_FAILURE );
 		}
-		groupbase = body->msram + raddr;
 
 		group_size = l->msram_group_size;
 
@@ -232,7 +237,8 @@ void read_msram_file(
 					raddr );
 				exit( EXIT_FAILURE );
 			}
-			groupbase[g] = strtol( ts, NULL, 16 );
+			assert((raddr + g) < l->msram_dword_count);
+			body->msram[raddr + g] = strtol( ts, NULL, 16 );
 		}
 	
 	}
