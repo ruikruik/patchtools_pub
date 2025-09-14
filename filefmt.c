@@ -163,7 +163,7 @@ void write_msram_file(
 	addr = l->msram_base;
 	for ( i = 0; i < l->msram_dword_count; i++ ) {
 		if ((i % l->msram_group_size) == 0) {
-			fprintf(file, "%04X: ", addr);
+			fprintf(file, "%04X:", addr);
 			addr += 8;
 		}
 		fprintf(file," %08X", body->msram[i]);
